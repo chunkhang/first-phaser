@@ -56,21 +56,24 @@
     }
 
     function create() {
+      // Background
       this.add.image(400, 300, 'sky');
 
+      // Platforms group
       platforms = this.physics.add.staticGroup();
-
+      // Ground
       platforms.create(400, 568, 'ground').setScale(2).refreshBody();
-
+      // Ledges
       platforms.create(600, 400, 'ground');
       platforms.create(50, 250, 'ground');
       platforms.create(750, 220, 'ground');
 
+      // Player
       player = this.physics.add.sprite(100, 450, 'dude');
-
       player.setBounce(0.2);
       player.setCollideWorldBounds(true);
 
+      // Player animations
       this.anims.create({
         key: 'left',
         frames: this.anims.generateFrameNumbers('dude', {
@@ -80,7 +83,6 @@
         frameRate: 10,
         repeat: -1
       });
-
       this.anims.create({
         key: 'turn',
         frames: [
@@ -91,7 +93,6 @@
         ],
         frameRate: 20
       });
-
       this.anims.create({
         key: 'right',
         frames: this.anims.generateFrameNumbers('dude', {
@@ -102,8 +103,10 @@
         repeat: -1
       });
 
+      // Input events
       cursors = this.input.keyboard.createCursorKeys();
 
+      // Stars group
       stars = this.physics.add.group({
         key: 'star',
         repeat: 11,
@@ -113,32 +116,38 @@
           stepX: 70
         }
       });
-
+      // Each star has a different bounce
       stars.children.iterate(function(child) {
         child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
       });
 
+      // Bombs group
       bombs = this.physics.add.group();
 
+      // Score
       scoreText = this.add.text(16, 16, 'Score: 0', {
         fontSize: '32px',
         fill: '#000'
       });
 
+      // Collisions with platforms
       this.physics.add.collider(player, platforms);
       this.physics.add.collider(stars, platforms);
       this.physics.add.collider(bombs, platforms);
 
+      // Check for overlap with star
       this.physics.add.overlap(player, stars, collectStar, null, this);
-
+      // Check for collision with bomb
       this.physics.add.collider(player, bombs, hitBomb, null, this);
     }
 
     function update() {
+      // Game over
       if (gameOver) {
         return;
       }
 
+      // Control keys
       if (cursors.left.isDown) {
         player.setVelocityX(-160);
         player.anims.play('left', true);
@@ -149,35 +158,40 @@
         player.setVelocityX(0);
         player.anims.play('turn');
       }
-
+      // Player can only jump when touching the ground
       if (cursors.up.isDown && player.body.touching.down) {
         player.setVelocityY(-330);
       }
     }
 
     function collectStar(player, star) {
+      // Hide star
       star.disableBody(true, true);
 
+      // Update score
       score += 10;
       scoreText.setText('Score: ' + score);
 
+      // Create new batch of stars when map is empty
       if (stars.countActive(true) === 0) {
         stars.children.iterate(function(child) {
           child.enableBody(true, child.x, 0, true, true);
         });
-
-        var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
-
+        // Create a bomb opposite of player
+        var x = (player.x < 400) ?
+          Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
         var bomb = bombs.create(x, 16, 'bomb');
         bomb.setBounce(1);
         bomb.setCollideWorldBounds(true);
         bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+        // Unaffected by gravity
         bomb.allowGravity = false;
       }
     }
 
     function hitBomb(player, bomb) {
       this.physics.pause();
+      // Make player red
       player.setTint(0xff0000);
       player.anims.play('turn');
       gameOver = true;
